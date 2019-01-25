@@ -26,6 +26,7 @@ namespace Library.API.Services
                 foreach (var book in author.Books)
                 {
                     book.Id = Guid.NewGuid();
+                    book.AuthorId = author.Id;
                 }
             }
         }
