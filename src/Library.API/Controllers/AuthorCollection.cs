@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Library.API.Entities;
+using Library.API.Helpers;
 using Library.API.Models;
 using Library.API.Services;
 using Library.API.ViewModels;
@@ -43,8 +44,28 @@ namespace Library.API.Controllers
             }
 
             var authorsToReturn = Mapper.Map<IEnumerable<AuthorDto>>(authorsEntity);
+            var idsAsString = string.Join(",", authorsToReturn.Select(a => a.Id));
 
-            return Ok();
+            return CreatedAtRoute("GetAuthorCollection", new {ids = idsAsString }, authorsToReturn);
+            //return Ok();
+        }
+
+        [HttpGet("{(ids)}", Name ="GetAuthorCollection")]
+        public IActionResult GetAuthorCollection([ModelBinder(BinderType = typeof(ArrayModelBinder))] IEnumerable<Guid> ids)
+        {
+            if(ids == null)
+            {
+                return BadRequest();
+            }
+            var authorEntities = _libraryRepository.GetAuthors(ids);
+
+            if(ids.Count() != authorEntities.Count())
+            {
+                return NotFound();
+            }
+            var authorToReturn = Mapper.Map<IEnumerable<AuthorDto>>(authorEntities);
+
+            return Ok(authorToReturn);
         }
     }
 }

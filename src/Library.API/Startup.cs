@@ -4,13 +4,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Library.API.Services;
-using Library.API.Entities;
 using Microsoft.EntityFrameworkCore;
 using Library.API.ViewModels;
 using Library.API.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Library.API.Models;
+using Library.API.Entities;
 
 namespace Library.API
 {
@@ -81,6 +81,8 @@ namespace Library.API
                 cfg.CreateMap<Entities.Book, BookDto>();
                 cfg.CreateMap<AuthorForCreateDto, Entities.Author>();
                 cfg.CreateMap<BookForCreateDto, Entities.Book>();
+                cfg.CreateMap<BookForUpdateDto, Entities.Book>();
+                cfg.CreateMap<Entities.Book, BookForUpdateDto>();
             });
 
             app.UseMvc(); 
