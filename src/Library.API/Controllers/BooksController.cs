@@ -6,6 +6,7 @@ using Library.API.Services;
 using Library.API.ViewModels;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 
@@ -15,10 +16,12 @@ namespace Library.API.Controllers
     public class BooksController: Controller
     {
         private ILibraryRepository _libraryRepository;
+        private ILogger<BooksController> _logger;
 
-        public BooksController(ILibraryRepository libraryRepository)
+        public BooksController(ILibraryRepository libraryRepository, ILogger<BooksController> logger)
         {
             _libraryRepository = libraryRepository;
+            _logger = logger;
         }
 
         [HttpGet()]
@@ -106,6 +109,8 @@ namespace Library.API.Controllers
                 throw new Exception($"Updating book {id} for author {authorId} failed on save.");
             }
 
+            _logger.LogInformation(100, $"Book {id} for author {authorId} was deleted");
+
             return NoContent();
         }
 
@@ -133,7 +138,15 @@ namespace Library.API.Controllers
 
             var bookToPatch = Mapper.Map<BookForUpdateDto>(bookForAuthorFromRepo);
 
-            patchDoc.ApplyTo(bookToPatch);
+            patchDoc.ApplyTo(bookToPatch, ModelState);
+
+            TryValidateModel(bookToPatch);
+
+            if (!ModelState.IsValid)
+            {
+                return new UnprocessableEntityObjectResult(ModelState);
+            }
+
 
             Mapper.Map(bookToPatch, bookForAuthorFromRepo);
 

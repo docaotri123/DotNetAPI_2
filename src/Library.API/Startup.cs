@@ -11,6 +11,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Library.API.Models;
 using Library.API.Entities;
+using Microsoft.AspNetCore.Diagnostics;
+using NLog.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace Library.API
 {
@@ -47,6 +52,14 @@ namespace Library.API
 
             // register the repository
             services.AddScoped<ILibraryRepository, LibraryRepository>();
+
+            services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+            services.AddScoped<IUrlHelper>(implementationFactory =>
+            {
+                var actionContext = implementationFactory.GetService<IActionContextAccessor>()
+                .ActionContext;
+                return new UrlHelper(actionContext);
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -54,6 +67,9 @@ namespace Library.API
             ILoggerFactory loggerFactory, LibraryContext libraryContext)
         {
             loggerFactory.AddConsole();
+            loggerFactory.AddDebug(LogLevel.Information);
+
+            loggerFactory.AddNLog();
 
             if (env.IsDevelopment())
             {
@@ -64,6 +80,14 @@ namespace Library.API
                 app.UseExceptionHandler(appBuider =>
                 {
                     appBuider.Run(async context => {
+                        var exceptionHandler = context.Features.Get<IExceptionHandlerFeature>();
+
+                        if (exceptionHandler != null)
+                        {
+                            var logger = loggerFactory.CreateLogger("Global exception logger");
+                            logger.LogError(500, exceptionHandler.Error, exceptionHandler.Error.Message);
+                        }
+
                         context.Response.StatusCode = 500;
                         await context.Response.WriteAsync("An unexpected fault happend. Try again later.");
                     });

@@ -1,4 +1,5 @@
 ﻿using Library.API.Entities;
+using Library.API.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -66,18 +67,17 @@ namespace Library.API.Services
             return _context.Authors.FirstOrDefault(a => a.Id == authorId);
         }
 
-        public IEnumerable<Author> GetAuthors(bool includeBooks = false)
+        public PagedList<Author> GetAuthors(AuthorsResourceParameters authorsResourceParameters, bool includeBooks = false)
         {
-            if (includeBooks)
-            {
-                return _context.Authors
-                .Include(m => m.Books)
+            var collectionBeforePaging =
+                _context.Authors
                 .OrderBy(a => a.FirstName)
-                .ThenBy(a => a.LastName);
-            }
-            return _context.Authors
-               .OrderBy(a => a.FirstName)
-               .ThenBy(a => a.LastName);
+                .ThenBy(a => a.LastName)
+                .AsQueryable();
+
+            return PagedList<Author>.Create(collectionBeforePaging,
+                authorsResourceParameters.PageNumber,
+                authorsResourceParameters.PageSize); 
         }
 
         public IEnumerable<Author> GetAuthors(IEnumerable<Guid> authorIds)
